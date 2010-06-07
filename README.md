@@ -5,9 +5,17 @@ Both Sinatra application styles are supported: "Classic" and "Classy" (modular) 
 
 ##Installation
 
+Since this is a fork of the original gem sources it is not released as a gem. You can build the gem yourself:
+
     gem build sinatra-simple-auth.gemspec
     gem install sinatra-simple-auth-0.1.1.gem
 
+or you can install it from a local path or even from github through Bundler by adding one of these two lines to your Gemfile:
+    
+    gem 'sinatra-simple-auth', :path => /path/to/sources
+    or
+    gem 'sinatra-simple-auth'. :git => 'git://github.com/uilgenstein/sinatra-simple-auth.git'
+    
 ##Usage for "Classic" style applications
 
     require 'rubygems'
@@ -39,7 +47,7 @@ Both Sinatra application styles are supported: "Classic" and "Classy" (modular) 
       end
     end
 
-##Usage for "Classy" style applications
+##Usage for "Classy" (modular) style applications
 
 In your config.ru you can mount your proteceted app under a url prefix (e.g. /admin):
 
