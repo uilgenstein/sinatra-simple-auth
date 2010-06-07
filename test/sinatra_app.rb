@@ -1,24 +1,38 @@
 require 'rubygems'
-require 'sinatra'
-require 'lib/sinatra/simple_auth'
+require 'sinatra/base'
+require File.expand_path('../../lib/sinatra/simple_auth', __FILE__)
 
+class MockApplication < Sinatra::Base
+  register Sinatra::SimpleAuth
+ 
+  set :environment, :test
+  enable :sessions
+ 
+  set :home, '/secret'
+  set :login, 'admin'
+  set :password, 'abcxyz'
 
-set :password, 'hello'
-set :home, '/secret/'
+  def authorize(login, password)
+    login == settings.login && password == settings.password
+  end
+  
+  get '/' do
+    "Root"
+  end
+  
+  get '/foo' do
+  end
 
-get '/' do
-  "hello, i'm root"
-end
+  get '/public' do
+    if authorized?
+      "hello %username%"
+    else
+      "Please login"
+    end
+  end
 
-get '/public' do
-  if authorized?
-    "hello, %username%"
-  else
-    "Please login"
-  end  
-end
-
-get '/pvt' do
-  protected!
-  "private area"
+  get '/protected' do
+    login_required
+    "private area"
+  end
 end

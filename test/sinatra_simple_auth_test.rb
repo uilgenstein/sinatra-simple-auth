@@ -3,54 +3,59 @@ require 'test/unit'
 require 'rack/test'
 begin; require 'turn'; rescue LoadError; end
 
-set :environment, :test
-enable :sessions
-
 class SinatraSimpleAuthTest < Test::Unit::TestCase
   include Rack::Test::Methods
-
+  
   def app
-    Sinatra::Application
+    MockApplication
   end
-
+    
   def test_it_should_login_and_redirect
-    post '/a', {:password => app.password}
+    login!
     assert_redirect app.home
   end
-
+  
   def test_it_should_fail_login_and_redirect
-    post '/a', {:password => 'some fake data'}
-    assert_redirect '/a'
+    post '/login', { :login => 'foo', :password => 'some fake data' }, env
+    assert_redirect '/login'
   end
-
+  
   def test_it_should_login_and_redirect_back
-    get '/pvt'
-    assert_redirect '/a'
+    get '/protected', {}, env
+    assert_redirect '/login'
     login!
-    assert_redirect '/pvt'
+    assert_redirect '/protected'
   end
-
+  
   def test_it_should_logout
     login!
-    delete '/a'
+    get '/logout', {}, env
     assert_redirect '/'
+    get '/protected', {}, env
+    assert_redirect '/login'
   end
-
+  
   def test_authorized_helper_should_work
-    get '/public'
+    get '/public', {}, env
     assert last_response.body.include?("Please login")
     login!
-    get '/public'
+    get '/public', {}, env
     assert last_response.body.include?("%username%")
   end
-
-  protected
+  
+  private
+  
   def login!
-    post '/a', {:password => app.password}
+    post '/login', { :login => app.login, :password => app.password }, env
   end
-
+  
   def assert_redirect(path)
     assert last_response.redirect?
-    assert_equal last_response.headers['Location'], path
+    assert_equal last_response.headers['Location'], env['SCRIPT_NAME'] + path
   end
+  
+  def env
+    { 'SCRIPT_NAME' => '/admin' }
+  end
+  
 end

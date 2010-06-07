@@ -3,42 +3,40 @@ require 'sinatra/base'
 module Sinatra
   module SimpleAuth
     module Helpers
+
+      def authorize(login, password)
+        nil
+      end
+
       def authorized?
-        session[:arni]
+        session[:user_id]
       end
-
-      def auth!(password)
-        if password == options.password
-          session[:arni] = true
-          redirect_back_or_default(options.home)
-        end
-        redirect '/a'
-      end
-
-      def logout!
-        session.clear
-        redirect '/'
-      end
-
-      def protected!
+      alias :logged_in? :authorized?
+                  
+      def login_required
         unless authorized?
           store_location
-          redirect '/a'
+          redirect full_app_path('/login')
         end
       end
 
       def store_location
-        session[:return_to] = request.fullpath if request.get?
+        session[:return_to] = request.path_info if request.get?
       end
+      
+      private
 
-      protected
       def redirect_back_or_default(default)
-        if session[:return_to] && session[:return_to] !=~ /^\/a\/?$/
+        if session[:return_to] && session[:return_to] !=~ Regexp.new("^/login/?$")
           back = session[:return_to].clone
           session[:return_to] = nil
-          redirect back
+          redirect full_app_path(back)
         end
-        redirect default
+        redirect full_app_path(default)
+      end
+
+      def full_app_path(path)
+        request.script_name + path
       end
 
     end
@@ -46,25 +44,24 @@ module Sinatra
     def self.registered(app)
       app.helpers SimpleAuth::Helpers
 
-      app.set :password, 'password'
       app.set :home, '/'
 
-      ['/a/?', '/login/?', '/signin/?'].each do |r|
-        app.post r do
-          auth!(params[:password])
+      app.post '/login/?' do
+        if user_id = authorize(params[:login], params[:password])
+          session[:user_id] = user_id
+          redirect_back_or_default(settings.home)
         end
-      end
-
-      app.delete '/a/?' do
-        logout!
+        redirect full_app_path('/login')
       end
 
       app.get '/logout/?' do
-        logout!
+        session.clear
+        redirect full_app_path('/')
       end
-    end
 
+    end
   end
 
   register SimpleAuth
 end
+   
